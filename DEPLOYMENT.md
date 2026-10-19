@@ -1,6 +1,6 @@
 # Deployment
 
-The intended deployment is one Fly app, `arnaudjalbert-montreal-escalators`, in Toronto (`yyz`), with one shared-CPU Machine and one persistent `data` volume mounted at `/data`. The container listens on port 8000. HTTPS is required and idle shutdown is disabled so the scheduler can continue ingesting. This configuration has not been deployed or verified; [DEPLOYMENT_BLOCKERS.md](DEPLOYMENT_BLOCKERS.md) records the current credential gap.
+The intended deployment is one Fly app, `arnaudjalbert-escalographe`, in Toronto (`yyz`), with one shared-CPU Machine and one persistent `data` volume mounted at `/data`. The container listens on port 8000. HTTPS is required and idle shutdown is disabled so the scheduler can continue ingesting. This configuration has not been deployed or verified; [DEPLOYMENT_BLOCKERS.md](DEPLOYMENT_BLOCKERS.md) records the current credential gap.
 
 ## Provision once
 
@@ -8,12 +8,12 @@ Install `flyctl` and authenticate with the account that owns the app. From the r
 
 ```sh
 fly auth login
-fly apps create arnaudjalbert-montreal-escalators
-fly volumes create data --app arnaudjalbert-montreal-escalators --region yyz --size 1 --yes
+fly apps create arnaudjalbert-escalographe
+fly volumes create data --app arnaudjalbert-escalographe --region yyz --size 1 --yes
 fly deploy --remote-only --ha=false --config fly.toml
-fly scale count 1 --app arnaudjalbert-montreal-escalators --yes
-fly status --app arnaudjalbert-montreal-escalators
-fly volumes list --app arnaudjalbert-montreal-escalators
+fly scale count 1 --app arnaudjalbert-escalographe --yes
+fly status --app arnaudjalbert-escalographe
+fly volumes list --app arnaudjalbert-escalographe
 ```
 
 If `yyz` is unavailable to the Fly organization, choose the nearest permitted region, then change `primary_region` in `fly.toml` and the volume's `--region` together *before* provisioning. Confirm that `status` lists exactly one machine and `volumes list` one attached volume. Do not run `scale count` on an existing unrelated app without inspecting its resources first. Keep a backup of SQLite; one Fly volume is not automatically replicated.
@@ -22,12 +22,12 @@ Do not use Fly's `[deploy] release_command` for SQLite migrations. Fly's release
 
 ## Continuous deployment
 
-CI checks every pull request and push to `main`. The deploy workflow waits for a successful CI workflow on `main`, checks out the exact tested commit, then deploys with `flyctl deploy --remote-only --ha=false`. It sends an HTTPS smoke request to `/api/health`, `/`, and `/docs`. It skips deployment when the GitHub repository secret is absent; it never commits or prints credentials.
+CI checks every pull request and push to `main`, including booting the production image twice against the same mounted test volume. The deploy workflow waits for a successful CI workflow on `main`, checks out the exact tested commit, then deploys with `flyctl deploy --remote-only --ha=false`. It verifies HTTPS at `/api/health`, `/`, and `/docs` and waits for real escalator and live-status data in `/api/v1/stats/summary`. It skips deployment when the GitHub repository secret is absent; it never commits or prints credentials.
 
 Once the app exists, create a Fly app-scoped deploy token and set the GitHub repository Actions secret `FLY_API_TOKEN`. Treat the output as a credential; do not paste it into issues, chat, or source control.
 
 ```sh
-fly tokens create deploy --app arnaudjalbert-montreal-escalators --expiry 2160h
+fly tokens create deploy --app arnaudjalbert-escalographe --expiry 2160h
 # Add the resulting value as the GitHub Actions repository secret FLY_API_TOKEN.
 ```
 

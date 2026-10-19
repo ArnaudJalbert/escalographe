@@ -1,6 +1,6 @@
 # L’Escalographe
 
-**Montréal Escalator Atlas.** A live map and open API for escalators in Montréal. The first screen separates operational, out-of-service, needs-verification, and unknown status. Observation age is shown separately, because an old report of a working escalator is not a fresh report.
+**Montréal Escalator Atlas.** A live map and open API for escalators in Montréal. The first screen separates operational, out-of-service, needs-verification, and unknown status. Observation age is shown separately, because an old report of a working escalator is not a fresh report. The website is available in French and English, with French as the default and a persistent language switch.
 
 The Fly application is configured but **not yet deployed**; there is no verified live URL. See [deployment blockers](DEPLOYMENT_BLOCKERS.md).
 
@@ -67,7 +67,7 @@ See `/docs` for response schemas, filters, station endpoints, history, and sourc
 make lint
 make test
 make build
-docker build -t montreal-escalators .
+docker build -t escalographe .
 ```
 
 Pull requests run backend lint/tests, frontend lint/types/unit/browser tests/build, and a Docker image build in GitHub Actions. After CI passes on `main`, a second workflow deploys only if the `FLY_API_TOKEN` repository secret exists. Deployment needs the Fly app and one `yyz` volume provisioned first. [DEPLOYMENT.md](DEPLOYMENT.md) lists the exact commands and smoke checks.

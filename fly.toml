@@ -1,4 +1,4 @@
-app = "arnaudjalbert-montreal-escalators"
+app = "arnaudjalbert-escalographe"
 primary_region = "yyz"
 
 [build]

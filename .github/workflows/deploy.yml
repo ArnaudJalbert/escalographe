@@ -37,7 +37,7 @@ jobs:
       - name: Verify public HTTP, API, and real ingestion
         if: env.FLY_API_TOKEN != ''
         run: |
-          base=https://arnaudjalbert-montreal-escalators.fly.dev
+          base=https://arnaudjalbert-escalographe.fly.dev
           curl --fail --show-error --silent --retry 8 --retry-delay 5 --retry-connrefused "$base/api/health"
           curl --fail --show-error --silent --output /dev/null "$base/"
           curl --fail --show-error --silent --output /dev/null "$base/docs"

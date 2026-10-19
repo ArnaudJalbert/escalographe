@@ -15,7 +15,9 @@ from .geography import geography_snapshot, station_location
 from .parser import BASE_URL, parse_station, station_urls
 
 LOGGER = logging.getLogger(__name__)
-USER_AGENT = "MontrealEscalatorAtlas/0.1 (+https://github.com/; STM-derived factual status)"
+USER_AGENT = (
+    "Escalographe/0.1 (+https://github.com/ArnaudJalbert/escalographe; STM-derived factual status)"
+)
 RETRYABLE = {429, 500, 502, 503, 504}
 
 

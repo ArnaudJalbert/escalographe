@@ -15,7 +15,7 @@ from app.ports import ExternalEscalatorRecord, SourceSnapshot
 from .parser import parse_overpass
 
 LOGGER = logging.getLogger(__name__)
-USER_AGENT = "MontrealEscalatorAtlas/0.1 (+https://github.com/; OSM attribution in application)"
+USER_AGENT = "Escalographe/0.1 (+https://github.com/ArnaudJalbert/escalographe; OSM attribution in application)"
 # Main public interpreter. Area 3601634158 is generated from city boundary relation 1634158,
 # not a rectangle and not the whole Montréal agglomeration.
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
