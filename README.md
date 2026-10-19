@@ -59,7 +59,7 @@ See `/docs` for response schemas, filters, station endpoints, history, and sourc
 
 ## Design and measurement
 
-[ARCHITECTURE.md](ARCHITECTURE.md) describes ports, adapters, transaction boundaries, and tests. Current availability divides operational escalators by operational plus out-of-service plus needs-verification escalators; unknown records are excluded. Coverage is reported separately. A fetch failure does not mark all escalators out of service: previous observations remain and eventually become stale. History is measured by time intervals, not number of rows.
+[ARCHITECTURE.md](ARCHITECTURE.md) describes ports, adapters, transaction boundaries, and tests. The French UI calls escalators *escaliers roulants* and uses *pété* as a casual label for an STM-reported out-of-service status. The API keeps the canonical `out_of_service` value. Unknown status and stale data do not imply a breakdown; an old out-of-service observation retains its label and gets a stale warning. Current availability divides operational escalators by operational plus out-of-service plus needs-verification escalators; unknown records are excluded. Coverage is reported separately. A fetch failure does not mark all escalators out of service: previous observations remain and eventually become stale. History is measured by time intervals, not number of rows.
 
 ## Checks and deployment
 

@@ -10,7 +10,7 @@ export const statusInfo: Record<Status, { label: string; short: string; color: s
 export function statusOf(value: string | undefined): Status { return value && value in statusInfo ? value as Status : 'unknown' }
 export function statusLabel(value: string | undefined, locale: Locale): string {
   const status = statusOf(value)
-  return locale === 'fr' ? { operational: 'En service', out_of_service: 'Hors service', verification_needed: 'À vérifier', unknown: 'État inconnu' }[status] : statusInfo[status].label
+  return locale === 'fr' ? { operational: 'En service', out_of_service: 'Pété', verification_needed: 'À vérifier', unknown: 'État inconnu' }[status] : statusInfo[status].label
 }
 export function directionLabel(value: string | null | undefined, locale: Locale): string {
   if (!value) return locale === 'fr' ? 'Direction inconnue' : 'Direction unknown'

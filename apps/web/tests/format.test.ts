@@ -12,7 +12,7 @@ describe('localized presentation', () => {
     expect(relativeTime(null, 'en')).toBe('No update yet')
   })
   it('translates normalized statuses and directions but preserves unrecognized source text', () => {
-    expect(statusLabel('out_of_service', 'fr')).toBe('Hors service')
+    expect(statusLabel('out_of_service', 'fr')).toBe('Pété')
     expect(statusLabel('out_of_service', 'en')).toBe('Out of service')
     expect(statusLabel(undefined, 'fr')).toBe('État inconnu')
     expect(directionLabel('up', 'fr')).toBe('Montée')

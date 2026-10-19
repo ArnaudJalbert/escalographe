@@ -16,7 +16,7 @@ export function SummaryPanel({ summary, loading, error }: { summary?: Summary; l
   const { t, locale } = useLanguage()
   const values = [
     { label: t('Operational'), value: summary?.operational, status: 'operational' },
-    { label: t('Out of service'), value: summary?.out_of_service, status: 'out_of_service' },
+    { label: locale === 'fr' ? 'Pétés' : t('Out of service'), value: summary?.out_of_service, status: 'out_of_service' },
     { label: t('Needs verification'), value: summary?.verification_needed, status: 'verification_needed' },
     { label: t('Unknown'), value: summary?.unknown, status: 'unknown' },
   ] as const
