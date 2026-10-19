@@ -4,9 +4,9 @@
 
 The Fly application is configured but **not yet deployed**; there is no verified live URL. See [deployment blockers](DEPLOYMENT_BLOCKERS.md).
 
-![Dashboard populated with real STM and OSM observations](docs/screenshots/dashboard.png)
+![Tableau de bord en français, alimenté par les observations réelles de la STM et d’OSM](docs/screenshots/dashboard.png)
 
-[Escalator detail screenshot](docs/screenshots/escalator-detail.png). Both screenshots come from the locally running product with real source imports, captured on October 19, 2026.
+[English dashboard](docs/screenshots/dashboard-english.png) · [French escalator detail](docs/screenshots/escalator-detail.png). These screenshots come from the locally running product with real source imports, captured on October 19, 2026.
 
 ## What it covers
 

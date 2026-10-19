@@ -20,44 +20,53 @@ function mockApi(overrides: Record<string, unknown> = {}) {
     return { ok: true, json: async () => data }
   }))
 }
-beforeEach(() => { window.history.pushState({}, '', '/') })
-describe('dashboard', () => {
-  it('renders availability, four status counts and a prominent outage', async () => {
-    mockApi(); render(<App />)
-    expect(await screen.findByLabelText('Availability now: 50.0%')).toBeInTheDocument()
+beforeEach(() => { window.history.pushState({}, '', '/'); try { localStorage.clear() } catch { /* storage disabled in Node */ } })
+describe.each([
+  { locale: 'fr', availability: 'Disponibilité actuelle', outage: /hors service 1/i, stale: /1 observation peut être périmée/i, shown: '3 sur 3 escaliers affichés', filter: 'Filtrer par état', search: /Chercher un escalier/, empty: /Aucun escalier répertorié/, noData: /Aucune observation disponible/, awaiting: 'En attente d’états de fonctionnement signalés', error: /Le résumé en direct est indisponible/ },
+  { locale: 'en', availability: 'Availability now', outage: /out of service 1/i, stale: /1 escalator observation may be stale/i, shown: '3 of 3 escalators shown', filter: 'Filter by status', search: /Search escalator/, empty: /No escalator records yet/, noData: /No escalator observations available yet/, awaiting: 'Awaiting reported operational statuses', error: /The live summary is unavailable/ },
+])('dashboard $locale', ({ locale, availability, outage, stale, shown, filter, search, empty, noData, awaiting, error }) => {
+  async function renderInLocale() {
+    const user = userEvent.setup()
+    render(<App />)
+    if (locale === 'en') await user.click(screen.getByRole('button', { name: 'English' }))
+    return user
+  }
+  it('renders availability, status counts and outage', async () => {
+    mockApi(); await renderInLocale()
+    expect(await screen.findByLabelText(`${availability}: 50.0%`)).toBeInTheDocument()
     expect(screen.getByText('2 / 3')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /out of service 1/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: outage })).toBeInTheDocument()
     expect(screen.getByText(/Orange line platform · mezzanine → platform/)).toBeInTheDocument()
+    expect(document.documentElement.lang).toBe(locale)
   })
   it('warns on stale status without changing it to an outage', async () => {
-    mockApi(); render(<App />)
-    expect(await screen.findByText(/1 escalator observations may be stale/i)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /out of service 1/i })).toBeInTheDocument()
+    mockApi(); await renderInLocale()
+    expect(await screen.findByText(stale)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: outage })).toBeInTheDocument()
   })
   it('filters by search and status, including unknown', async () => {
-    mockApi(); render(<App />)
-    await screen.findByText('3 of 3 escalators shown')
-    const user = userEvent.setup()
-    await user.selectOptions(screen.getByLabelText('Filter by status'), 'unknown')
-    expect(screen.getByText('1 of 3 escalators shown')).toBeInTheDocument()
+    mockApi(); const user = await renderInLocale()
+    await screen.findByText(shown)
+    await user.selectOptions(screen.getByLabelText(filter), 'unknown')
+    expect(screen.getByText(locale === 'fr' ? '1 sur 3 escaliers affichés' : '1 of 3 escalators shown')).toBeInTheDocument()
     expect(within(screen.getByTestId('mock-map')).getByText('Map: 1 markers')).toBeInTheDocument()
-    await user.type(screen.getByPlaceholderText(/Search escalator or station/), 'not a place')
-    expect(screen.getByText(/No escalators match these filters/)).toBeInTheDocument()
+    await user.type(screen.getByPlaceholderText(search), 'not a place')
+    expect(screen.getByText(locale === 'fr' ? /Aucun escalier ne correspond/ : /No escalators match/)).toBeInTheDocument()
   })
   it('never presents an empty dataset as zero availability or a confirmed all-clear', async () => {
-    mockApi({ '/api/v1/stats/summary': { ...summary, total: 0, operational: 0, out_of_service: 0, unknown: 0, availability: null, live_status_coverage: 0 }, '/api/v1/escalators': { items: [], total: 0, limit: 100, offset: 0 } }); render(<App />)
-    expect(await screen.findByText(/No escalator records yet/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Availability now: —')).toBeInTheDocument()
-    expect(screen.getByText(/No escalator observations available yet/)).toBeInTheDocument()
+    mockApi({ '/api/v1/stats/summary': { ...summary, total: 0, operational: 0, out_of_service: 0, unknown: 0, availability: null, live_status_coverage: 0 }, '/api/v1/escalators': { items: [], total: 0, limit: 100, offset: 0 } }); await renderInLocale()
+    expect(await screen.findByText(empty)).toBeInTheDocument()
+    expect(screen.getByLabelText(`${availability}: —`)).toBeInTheDocument()
+    expect(screen.getByText(noData)).toBeInTheDocument()
   })
   it('does not show 0% when every observed status is unknown', async () => {
-    mockApi({ '/api/v1/stats/summary': { ...summary, total: 1, operational: 0, out_of_service: 0, unknown: 1, availability: 0, live_status_coverage: 0 } }); render(<App />)
-    expect(await screen.findByLabelText('Availability now: —')).toBeInTheDocument()
-    expect(screen.getByText('Awaiting reported operational statuses')).toBeInTheDocument()
+    mockApi({ '/api/v1/stats/summary': { ...summary, total: 1, operational: 0, out_of_service: 0, unknown: 1, availability: 0, live_status_coverage: 0 } }); await renderInLocale()
+    expect(await screen.findByLabelText(`${availability}: —`)).toBeInTheDocument()
+    expect(screen.getByText(awaiting)).toBeInTheDocument()
   })
   it('shows a clear API failure instead of made-up data', async () => {
-    mockApi({ '/api/v1/stats/summary': 'error', '/api/v1/escalators': 'error' }); render(<App />)
-    expect(await screen.findByText(/The live summary is unavailable/, {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(await screen.findByText(/The escalator list could not be loaded/, {}, { timeout: 5000 })).toBeInTheDocument()
-  })
+    mockApi({ '/api/v1/stats/summary': 'error', '/api/v1/escalators': 'error' }); await renderInLocale()
+    expect(await screen.findByText(error, {}, { timeout: 7000 })).toBeInTheDocument()
+    expect(await screen.findByText(locale === 'fr' ? /Impossible de charger la liste/ : /The escalator list could not be loaded/)).toBeInTheDocument()
+  }, 10000)
 })
