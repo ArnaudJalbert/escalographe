@@ -1,0 +1,15 @@
+services:
+  atlas:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/escalators.db
+      ENVIRONMENT: development
+      STATIC_DIR: /app/static
+    volumes:
+      - escalator-data:/data
+    restart: unless-stopped
+
+volumes:
+  escalator-data:

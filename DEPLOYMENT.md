@@ -1,0 +1,40 @@
+# Deployment
+
+The intended deployment is one Fly app, `arnaudjalbert-montreal-escalators`, in Toronto (`yyz`), with one shared-CPU Machine and one persistent `data` volume mounted at `/data`. The container listens on port 8000. HTTPS is required and idle shutdown is disabled so the scheduler can continue ingesting. This configuration has not been deployed or verified; [DEPLOYMENT_BLOCKERS.md](DEPLOYMENT_BLOCKERS.md) records the current credential gap.
+
+## Provision once
+
+Install `flyctl` and authenticate with the account that owns the app. From the repository root:
+
+```sh
+fly auth login
+fly apps create arnaudjalbert-montreal-escalators
+fly volumes create data --app arnaudjalbert-montreal-escalators --region yyz --size 1 --yes
+fly deploy --remote-only --ha=false --config fly.toml
+fly scale count 1 --app arnaudjalbert-montreal-escalators --yes
+fly status --app arnaudjalbert-montreal-escalators
+fly volumes list --app arnaudjalbert-montreal-escalators
+```
+
+If `yyz` is unavailable to the Fly organization, choose the nearest permitted region, then change `primary_region` in `fly.toml` and the volume's `--region` together *before* provisioning. Confirm that `status` lists exactly one machine and `volumes list` one attached volume. Do not run `scale count` on an existing unrelated app without inspecting its resources first. Keep a backup of SQLite; one Fly volume is not automatically replicated.
+
+Do not use Fly's `[deploy] release_command` for SQLite migrations. Fly's release-command Machine cannot mount volumes, so it would migrate an ephemeral database. `docker-entrypoint.sh` runs `python -m app.cli migrate` on the attached `/data` volume before serving requests. The image drops privileges after preparing mount ownership. There can be a short interruption during a single-volume deployment; do not run two schedulers against independent copies.
+
+## Continuous deployment
+
+CI checks every pull request and push to `main`. The deploy workflow waits for a successful CI workflow on `main`, checks out the exact tested commit, then deploys with `flyctl deploy --remote-only --ha=false`. It sends an HTTPS smoke request to `/api/health`, `/`, and `/docs`. It skips deployment when the GitHub repository secret is absent; it never commits or prints credentials.
+
+Once the app exists, create a Fly app-scoped deploy token and set the GitHub repository Actions secret `FLY_API_TOKEN`. Treat the output as a credential; do not paste it into issues, chat, or source control.
+
+```sh
+fly tokens create deploy --app arnaudjalbert-montreal-escalators --expiry 2160h
+# Add the resulting value as the GitHub Actions repository secret FLY_API_TOKEN.
+```
+
+The token expires after 90 days using this example; rotate it before then. Fly's [GitHub Actions deployment guide](https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/) recommends a repository secret and a deploy-scoped token. Never use a broad organization token if an app-scoped one suffices. Merge to `main` only after the app and volume are ready and the secret is configured.
+
+## Verify after deployment
+
+Do not report a live site on the basis of a configured hostname alone. Once a deploy succeeds, check the Fly status, machine and volume count, logs, HTTPS site, health, docs, and API data. Check that status observations are recent and sourced from real STM records. Direct navigation to an escalator route must return the SPA; an invalid `/api/*` path must not return its HTML. Check the database still exists after a second deploy, and watch the next scheduled ingestion. An unexplained empty database is a failed launch, not a successful smoke test.
+
+Fly references: [app configuration, HTTP checks, mounts, and release commands](https://fly.io/docs/reference/configuration/), [volumes and their limits](https://fly.io/docs/volumes/overview/), [volume creation](https://fly.io/docs/flyctl/volumes-create/), [app-scoped deploy tokens](https://fly.io/docs/flyctl/tokens-create-deploy/), [GitHub Actions deployment](https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/).
