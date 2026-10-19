@@ -1,0 +1,72 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.4 2390de5a",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-19T18:04:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "way",
+      "id": 1021741791,
+      "bounds": {
+        "minlat": 45.503072,
+        "minlon": -73.5719941,
+        "maxlat": 45.503134,
+        "maxlon": -73.571858
+      },
+      "nodes": [
+        9423435266,
+        9423435265
+      ],
+      "geometry": [
+        {
+          "lat": 45.503134,
+          "lon": -73.5719941
+        },
+        {
+          "lat": 45.503072,
+          "lon": -73.571858
+        }
+      ],
+      "tags": {
+        "conveying": "yes",
+        "highway": "steps",
+        "incline": "down",
+        "indoor": "yes",
+        "level": "-2;-1"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1021741792,
+      "bounds": {
+        "minlat": 45.5030819,
+        "minlon": -73.571982,
+        "maxlat": 45.503146,
+        "maxlon": -73.5718481
+      },
+      "nodes": [
+        9423435268,
+        9423435267
+      ],
+      "geometry": [
+        {
+          "lat": 45.5030819,
+          "lon": -73.5718481
+        },
+        {
+          "lat": 45.503146,
+          "lon": -73.571982
+        }
+      ],
+      "tags": {
+        "conveying": "yes",
+        "highway": "steps",
+        "incline": "up",
+        "indoor": "yes",
+        "level": "-2;-1"
+      }
+    }
+  ]
+}

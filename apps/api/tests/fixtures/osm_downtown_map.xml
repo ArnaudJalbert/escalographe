@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<osm version="0.6" generator="openstreetmap-cgimap 2.1.0 (1307 spike-08.openstreetmap.org)"><node id="12215121469" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5020242" lon="-73.5638039" />
+ <node id="12215121475" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5021066" lon="-73.5641382" />
+ <node id="12215121476" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5021365" lon="-73.5642432" />
+ <node id="12215121477" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5022659" lon="-73.5646771" />
+ <node id="12215121478" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5022861" lon="-73.5647493" />
+ <node id="12215121479" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665" lat="45.5023989" lon="-73.5651947" />
+ <way id="1319982885" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665">
+  <nd ref="12215121469" />
+  <nd ref="12215121475" />
+  <tag k="conveying" v="yes" />
+  <tag k="highway" v="steps" />
+  <tag k="indoor" v="yes" />
+  <tag k="tunnel" v="yes" />
+ </way>
+ <way id="1319982887" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665">
+  <nd ref="12215121476" />
+  <nd ref="12215121477" />
+  <tag k="conveying" v="yes" />
+  <tag k="highway" v="steps" />
+  <tag k="indoor" v="yes" />
+  <tag k="tunnel" v="yes" />
+ </way>
+ <way id="1319982889" visible="true" version="1" changeset="157358941" timestamp="2024-10-01T22:30:24Z" user="mashdash" uid="14420665">
+  <nd ref="12215121478" />
+  <nd ref="12215121479" />
+  <tag k="conveying" v="yes" />
+  <tag k="highway" v="steps" />
+  <tag k="indoor" v="yes" />
+  <tag k="tunnel" v="yes" />
+ </way>
+ </osm>
