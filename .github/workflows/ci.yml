@@ -51,3 +51,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t montreal-escalators:ci .
+      - name: Boot production image and verify mounted data survives restart
+        run: |
+          set -eu
+          docker volume create atlas-ci-data
+          trap 'docker rm -f atlas-ci 2>/dev/null || true; docker volume rm atlas-ci-data 2>/dev/null || true' EXIT
+          docker run -d --name atlas-ci -p 8000:8000 -v atlas-ci-data:/data montreal-escalators:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/api/health
+          curl --fail --silent --output /dev/null http://127.0.0.1:8000/
+          curl --fail --silent --output /dev/null http://127.0.0.1:8000/docs
+          docker exec atlas-ci sh -c 'test -f /data/escalators.db && touch /data/ci-persistence-check'
+          docker rm -f atlas-ci
+          docker run -d --name atlas-ci -p 8000:8000 -v atlas-ci-data:/data montreal-escalators:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/api/health
+          docker exec atlas-ci sh -c 'test -f /data/escalators.db && test -f /data/ci-persistence-check'
