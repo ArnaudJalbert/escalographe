@@ -2,7 +2,7 @@
 
 **Montréal Escalator Atlas.** A live map and open API for escalators in Montréal. The first screen separates operational, out-of-service, needs-verification, and unknown status. Observation age is shown separately, because an old report of a working escalator is not a fresh report. The website is available in French and English, with French as the default and a persistent language switch.
 
-The Fly application is configured but **not yet deployed**; there is no verified live URL. See [deployment blockers](DEPLOYMENT_BLOCKERS.md).
+Live at [arnaudjalbert-escalographe.fly.dev](https://arnaudjalbert-escalographe.fly.dev). The PR application was deployed and verified on October 20, 2026. See [deployment details](DEPLOYMENT.md).
 
 ![Tableau de bord en français, alimenté par les observations réelles de la STM et d’OSM](docs/screenshots/dashboard.png)
 
@@ -70,7 +70,7 @@ make build
 docker build -t escalographe .
 ```
 
-Pull requests run backend lint/tests, frontend lint/types/unit/browser tests/build, and a Docker image build in GitHub Actions. After CI passes on `main`, a second workflow deploys only if the `FLY_API_TOKEN` repository secret exists. Deployment needs the Fly app and one `yyz` volume provisioned first. [DEPLOYMENT.md](DEPLOYMENT.md) lists the exact commands and smoke checks.
+Pull requests run backend lint/tests, frontend lint/types/unit/browser tests/build, and a Docker image build in GitHub Actions. After CI passes on `main`, a second workflow deploys the tested commit using the configured `FLY_API_TOKEN` repository secret. The Fly app and its single `yyz` volume are provisioned. [DEPLOYMENT.md](DEPLOYMENT.md) lists the commands and smoke checks.
 
 Known limits: STM–OSM identity matching is deliberately conservative, so some physical escalators appear twice; STM station-centroid markers are approximate, not device positions; OSM has no live status; early reliability estimates lack enough history; a single SQLite volume is not automatically replicated. If Overpass fails, the adapter explicitly records a partial downtown OSM fallback rather than claiming full-city coverage. No data is fabricated to fill gaps.
 

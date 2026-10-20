@@ -1,6 +1,12 @@
 # Deployment
 
-The intended deployment is one Fly app, `arnaudjalbert-escalographe`, in Toronto (`yyz`), with one shared-CPU Machine and one persistent `data` volume mounted at `/data`. The container listens on port 8000. HTTPS is required and idle shutdown is disabled so the scheduler can continue ingesting. This configuration has not been deployed or verified; [DEPLOYMENT_BLOCKERS.md](DEPLOYMENT_BLOCKERS.md) records the current credential gap.
+The live deployment is [arnaudjalbert-escalographe.fly.dev](https://arnaudjalbert-escalographe.fly.dev), in Toronto (`yyz`), with one shared-CPU Machine, 512 MB RAM, and one encrypted 1 GB `data` volume mounted at `/data`. The container listens on port 8000. HTTPS is required and idle shutdown is disabled so the scheduler can continue ingesting.
+
+## Deployment status
+
+PR #7 was deployed on October 20, 2026 from commit `6e94064269356e2460b6b05d326487825d658eb1`. Machine `8ed676b7119202` has volume `vol_v3gx07p3wdzeowl4` attached. The health check passes. Live imports received 245 STM records and 74 OSM records with city-boundary coverage. A second remote build and deployment preserved an existing device's ID, source identifiers, first-seen timestamps, complete history, and original ingestion run.
+
+The GitHub Actions secret `FLY_API_TOKEN` contains an app-scoped deploy token created on October 20, 2026 with a 90-day lifetime. Rotate it before January 18, 2027. The first automatic deployment from `main` still needs a merge and successful CI; the initial deployment used `fly deploy` from the PR branch.
 
 ## Provision once
 
@@ -8,9 +14,9 @@ Install `flyctl` and authenticate with the account that owns the app. From the r
 
 ```sh
 fly auth login
-fly apps create arnaudjalbert-escalographe
+fly apps create arnaudjalbert-escalographe --org personal
 fly volumes create data --app arnaudjalbert-escalographe --region yyz --size 1 --yes
-fly deploy --remote-only --ha=false --config fly.toml
+fly deploy --remote-only --ha=false --config fly.toml --build-arg GIT_SHA="$(git rev-parse HEAD)"
 fly scale count 1 --app arnaudjalbert-escalographe --yes
 fly status --app arnaudjalbert-escalographe
 fly volumes list --app arnaudjalbert-escalographe
@@ -27,8 +33,8 @@ CI checks every pull request and push to `main`, including booting the productio
 Once the app exists, create a Fly app-scoped deploy token and set the GitHub repository Actions secret `FLY_API_TOKEN`. Treat the output as a credential; do not paste it into issues, chat, or source control.
 
 ```sh
-fly tokens create deploy --app arnaudjalbert-escalographe --expiry 2160h
-# Add the resulting value as the GitHub Actions repository secret FLY_API_TOKEN.
+fly tokens create deploy --app arnaudjalbert-escalographe --expiry 2160h \
+  | gh secret set FLY_API_TOKEN --repo ArnaudJalbert/escalographe
 ```
 
 The token expires after 90 days using this example; rotate it before then. Fly's [GitHub Actions deployment guide](https://fly.io/docs/app-guides/continuous-deployment-with-github-actions/) recommends a repository secret and a deploy-scoped token. Never use a broad organization token if an app-scoped one suffices. Merge to `main` only after the app and volume are ready and the secret is configured.
