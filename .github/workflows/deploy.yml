@@ -1,0 +1,53 @@
+name: Deploy to Fly.io
+
+# Deploy only after the complete CI workflow succeeds on the trusted main branch.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - name: Explain missing credentials
+        if: env.FLY_API_TOKEN == ''
+        run: echo 'No FLY_API_TOKEN repository secret; deployment skipped. See DEPLOYMENT_BLOCKERS.md.'
+      - uses: actions/checkout@v4
+        if: env.FLY_API_TOKEN != ''
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: env.FLY_API_TOKEN != ''
+      - name: Deploy one Machine
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl deploy --remote-only --ha=false --config fly.toml --build-arg GIT_SHA=${{ github.event.workflow_run.head_sha }}
+      - name: Verify public HTTP, API, and real ingestion
+        if: env.FLY_API_TOKEN != ''
+        run: |
+          base=https://arnaudjalbert-escalographe.fly.dev
+          curl --fail --show-error --silent --retry 8 --retry-delay 5 --retry-connrefused "$base/api/health"
+          curl --fail --show-error --silent --output /dev/null "$base/"
+          curl --fail --show-error --silent --output /dev/null "$base/docs"
+          for attempt in $(seq 1 18); do
+            curl --fail --show-error --silent "$base/api/v1/stats/summary" > "$RUNNER_TEMP/atlas-summary.json"
+            if python3 -c 'import json,os; s=json.load(open(os.environ["RUNNER_TEMP"]+"/atlas-summary.json")); assert s["total"]>0 and s["live_status_coverage"]>0'; then
+              curl --fail --show-error --silent --output /dev/null "$base/api/v1/escalators?limit=1"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo 'Live ingestion did not produce real status data' >&2
+          exit 1

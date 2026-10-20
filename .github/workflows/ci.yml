@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: apps/api/pyproject.toml
+      - run: python -m pip install -e '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --run
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run build
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t escalographe:ci .
+      - name: Boot production image and verify mounted data survives restart
+        run: |
+          set -eu
+          docker volume create atlas-ci-data
+          trap 'docker rm -f atlas-ci 2>/dev/null || true; docker volume rm atlas-ci-data 2>/dev/null || true' EXIT
+          docker run -d --name atlas-ci -p 8000:8000 -v atlas-ci-data:/data escalographe:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/api/health
+          curl --fail --silent --output /dev/null http://127.0.0.1:8000/
+          curl --fail --silent --output /dev/null http://127.0.0.1:8000/docs
+          docker exec atlas-ci sh -c 'test -f /data/escalators.db && touch /data/ci-persistence-check'
+          docker rm -f atlas-ci
+          docker run -d --name atlas-ci -p 8000:8000 -v atlas-ci-data:/data escalographe:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8000/api/health
+          docker exec atlas-ci sh -c 'test -f /data/escalators.db && test -f /data/ci-persistence-check'

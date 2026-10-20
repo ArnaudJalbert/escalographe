@@ -1,0 +1,15 @@
+**/.venv/
+**/node_modules/
+**/dist/
+**/.pytest_cache/
+**/__pycache__/
+**/.ruff_cache/
+**/coverage/
+**/playwright-report/
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-shm
+*.db-wal

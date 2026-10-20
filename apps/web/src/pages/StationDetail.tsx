@@ -1,0 +1,22 @@
+import { useLanguage } from '../i18n'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft } from 'lucide-react'
+import { Link, useParams } from 'react-router-dom'
+import { api } from '../api/client'
+import { percent, directionLabel } from '../components/format'
+import { StatusBadge } from '../components/Status'
+import type { Escalator } from '../types'
+
+export function StationDetail() {
+  const { t, locale } = useLanguage()
+  const { id } = useParams()
+  const station = useQuery({ queryKey: ['station', id], queryFn: () => api.station(id!), enabled: !!id })
+  const escalators = useQuery({ queryKey: ['station-escalators', id], queryFn: () => api.escalators({ station: id!, limit: 500 }), enabled: !!id })
+  if (station.isLoading) return <div className="page-wrap detail-loading">{t('Loading station…')}</div>
+  if (station.isError || !station.data) return <div className="page-wrap detail-loading" role="alert">{t('This station could not be found.')} <Link className="text-link" to="/">{t('Back to the atlas')}</Link></div>
+  const items: Escalator[] = station.data.escalators?.length ? station.data.escalators : escalators.data?.items || []
+  const operational = items.filter(item => item.status?.value === 'operational').length
+  const out = items.filter(item => item.status?.value === 'out_of_service').length
+  const known = items.filter(item => item.status?.value && item.status.value !== 'unknown').length
+  return <div className="page-wrap detail-page"><Link className="back-link" to="/"><ArrowLeft size={16} /> {t('Back to the atlas')}</Link><div className="detail-head"><div><div className="eyebrow">{t('STATION / MONTRÉAL')}</div><h1>{station.data.name}</h1><p>{t('Current observations for escalators at this station.')}</p></div></div><div className="station-metrics"><div><span>{t('KNOWN ESCALATORS')}</span><strong>{station.data.escalator_count ?? items.length}</strong></div><div><span>{t('OPERATIONAL')}</span><strong>{operational}</strong></div><div><span>{t('OUT OF SERVICE')}</span><strong>{out}</strong></div><div><span>{t('AVAILABILITY')}</span><strong>{known ? percent(100 * operational / known) : '—'}</strong></div></div><h2 className="station-subtitle">{t('Escalators at')} {station.data.name}</h2>{escalators.isLoading && !station.data.escalators && <p>{t('Loading escalators…')}</p>}{escalators.isError && !station.data.escalators && <p role="alert">{t('Escalator list is temporarily unavailable.')}</p>}{!items.length && !escalators.isLoading && <div className="empty-card">{t('No escalators are listed at this station yet.')}</div>}<div className="escalator-list">{items.map(item => <Link key={item.id} to={`/escalators/${encodeURIComponent(item.id)}`} className="escalator-row"><span className="row-main"><strong>{item.name}</strong><small>{directionLabel(item.direction, locale)}</small></span><StatusBadge value={item.status?.value} stale={item.status?.is_stale} /></Link>)}</div></div>
+}
