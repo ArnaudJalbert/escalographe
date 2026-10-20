@@ -4,6 +4,8 @@
 
 Live at [arnaudjalbert-escalographe.fly.dev](https://arnaudjalbert-escalographe.fly.dev). The PR application was deployed and verified on October 20, 2026. See [deployment details](DEPLOYMENT.md).
 
+The app stops when idle and wakes on the next request. Source refreshes pause while it is stopped; persisted observations remain available after startup while new data loads.
+
 ![Tableau de bord en français, alimenté par les observations réelles de la STM et d’OSM](docs/screenshots/dashboard.png)
 
 [English dashboard](docs/screenshots/dashboard-english.png) · [French escalator detail](docs/screenshots/escalator-detail.png). These screenshots come from the locally running product with real source imports, captured on October 19, 2026.
