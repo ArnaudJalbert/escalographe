@@ -22,7 +22,7 @@ def test_import_boundaries():
         "scheduler",
         "cli",
     }
-    for name in ("domain.py", "application.py", "ports.py"):
+    for name in ("domain.py", "application.py", "ports.py", "reconciliation.py"):
         tree = ast.parse((app_dir / name).read_text())
         imports = []
         for node in ast.walk(tree):
@@ -31,7 +31,7 @@ def test_import_boundaries():
             elif isinstance(node, ast.Import):
                 imports.extend(alias.name.removeprefix("app.") for alias in node.names)
         assert not any(module.split(".")[0] in forbidden for module in imports), name
-        if name == "domain.py":
+        if name in ("domain.py", "reconciliation.py"):
             assert not any(module.split(".")[0] in ("application", "ports") for module in imports)
 
 

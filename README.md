@@ -36,7 +36,7 @@ make ingest-osm
 # or: make ingest-all
 ```
 
-The CLI is also callable from `apps/api` as `python -m app.cli ingest stm`, `python -m app.cli ingest osm`, and `python -m app.cli migrate`. Do not run two schedulers against the same SQLite database.
+The CLI is also callable from `apps/api` as `python -m app.cli ingest stm`, `python -m app.cli ingest osm`, and `python -m app.cli migrate`. After ingesting both sources, `python -m app.cli reconcile` (or `make reconcile`) collapses OSM-mapped escalators into matching STM devices when a single, unambiguous candidate exists; ambiguous cases stay separate. Do not run two schedulers against the same SQLite database.
 
 For a production-like local image, with a Docker daemon running:
 
@@ -74,7 +74,7 @@ docker build -t escalographe .
 
 Pull requests run backend lint/tests, frontend lint/types/unit/browser tests/build, and a Docker image build in GitHub Actions. After CI passes on `main`, a second workflow deploys the tested commit using the configured `FLY_API_TOKEN` repository secret. The Fly app and its single `yyz` volume are provisioned. [DEPLOYMENT.md](DEPLOYMENT.md) lists the commands and smoke checks.
 
-Known limits: STM–OSM identity matching is deliberately conservative, so some physical escalators appear twice; STM station-centroid markers are approximate, not device positions; OSM has no live status; early reliability estimates lack enough history; a single SQLite volume is not automatically replicated. If Overpass fails, the adapter explicitly records a partial downtown OSM fallback rather than claiming full-city coverage. No data is fabricated to fill gaps.
+Known limits: STM–OSM identity matching is deliberately conservative — reconciliation only collapses an OSM device into an STM device when a single, unambiguous candidate survives the station, direction and level filters, so some physical escalators may still appear twice rather than risk a false merge; STM station-centroid markers are approximate, not device positions; OSM has no live status; early reliability estimates lack enough history; a single SQLite volume is not automatically replicated. If Overpass fails, the adapter explicitly records a partial downtown OSM fallback rather than claiming full-city coverage. No data is fabricated to fill gaps.
 
 ## License
 

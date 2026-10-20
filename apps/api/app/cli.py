@@ -4,8 +4,10 @@ import argparse
 import asyncio
 import json
 
+from .application import Reconcile
 from .bootstrap import migrate, use_cases
 from .persistence import create_database
+from .reconciliation import ReconciliationConfig
 
 
 def main():
@@ -15,6 +17,12 @@ def main():
     sub.add_parser("init-db")
     sub.add_parser("health")
     sub.add_parser("ingest").add_argument("source", choices=["stm", "osm", "all"])
+    sub.add_parser("reconcile").add_argument(
+        "--radius",
+        type=float,
+        default=None,
+        help="station attribution radius in metres (default 200)",
+    )
     args = parser.parse_args()
     if args.command in ("migrate", "init-db"):
         migrate()
@@ -24,6 +32,10 @@ def main():
     if args.command == "health":
         with db() as tx:
             print(json.dumps(tx.runs(), ensure_ascii=False))
+        return
+    if args.command == "reconcile":
+        config = ReconciliationConfig(station_radius_m=args.radius) if args.radius else None
+        print(json.dumps(Reconcile(db, config).execute(), ensure_ascii=False))
         return
 
     async def ingest():

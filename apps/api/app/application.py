@@ -6,6 +6,7 @@ from datetime import datetime
 
 from .domain import Status, availability
 from .ports import EscalatorSource, UnitOfWorkFactory
+from .reconciliation import OsmDevice, ReconciliationConfig, StmDevice, plan_reconciliation
 
 
 @dataclass(frozen=True)
@@ -188,3 +189,35 @@ class Catalogue:
     def summary(self, within_montreal=True):
         rows = self.list(EscalatorQuery(within_montreal=within_montreal, limit=100000))
         return self.summary_for(rows)
+
+
+class Reconcile:
+    """Collapse OSM-mapped escalators into matching STM devices, conservatively.
+
+    Reads both source sets through the unit of work, asks the domain policy for
+    a merge plan, applies only the safe merges, and reports what was merged and
+    what was deliberately kept separate (with a reason per skipped device).
+    """
+
+    def __init__(self, uow: UnitOfWorkFactory, config: ReconciliationConfig | None = None):
+        self.uow = uow
+        self.config = config or ReconciliationConfig()
+
+    def execute(self) -> dict:
+        with self.uow() as tx:
+            stm_devices = [StmDevice(**row) for row in tx.reconciliation_stm_devices()]
+            osm_devices = [OsmDevice(**row) for row in tx.reconciliation_osm_devices()]
+            plan = plan_reconciliation(stm_devices, osm_devices, self.config)
+            merged = [
+                merge for merge in plan.merges if tx.merge_into(merge.keep_id, merge.absorbed_id)
+            ]
+        return {
+            "candidates": len(osm_devices),
+            "merged": len(merged),
+            "kept_separate": len(plan.skipped),
+            "merges": [
+                {"keep": merge.keep_id, "absorbed": merge.absorbed_id, "reason": merge.reason}
+                for merge in merged
+            ],
+            "skipped": [{"osm_id": skip.osm_id, "reason": skip.reason} for skip in plan.skipped],
+        }

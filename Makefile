@@ -4,7 +4,7 @@ PYTEST := apps/api/.venv/bin/pytest
 UVICORN := apps/api/.venv/bin/uvicorn
 DB_URL := sqlite:///../../data/escalators.db
 
-.PHONY: install dev api web migrate ingest-stm ingest-osm ingest-all test lint build docker
+.PHONY: install dev api web migrate ingest-stm ingest-osm ingest-all reconcile test lint build docker
 
 install:
 	python3 -m venv apps/api/.venv
@@ -31,6 +31,9 @@ migrate:
 
 ingest-stm ingest-osm ingest-all: ingest-%:
 	cd apps/api && DATABASE_URL=$(DB_URL) .venv/bin/python -m app.cli ingest $*
+
+reconcile:
+	cd apps/api && DATABASE_URL=$(DB_URL) .venv/bin/python -m app.cli reconcile
 
 test:
 	cd apps/api && .venv/bin/pytest

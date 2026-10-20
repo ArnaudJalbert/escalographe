@@ -240,6 +240,94 @@ class Transaction:
         s.flush()
         return created
 
+    def reconciliation_stm_devices(self):
+        """STM escalators with the spatial/level/direction evidence to match on."""
+        s = self.session
+        ids = s.scalars(select(SourceRow.escalator_id).where(SourceRow.source == "stm")).all()
+        devices = []
+        for escalator_id in ids:
+            row = s.get(EscalatorRow, escalator_id)
+            if row is None:
+                continue
+            station = s.get(StationRow, row.station_id) if row.station_id else None
+            devices.append(
+                {
+                    "id": row.id,
+                    "station_name": station.name if station else None,
+                    "station_latitude": station.latitude if station else None,
+                    "station_longitude": station.longitude if station else None,
+                    "from_level": row.from_level,
+                    "to_level": row.to_level,
+                    "direction": row.direction,
+                }
+            )
+        return devices
+
+    def reconciliation_osm_devices(self):
+        """Unmerged OSM escalators with their coordinates and mapping tags."""
+        s = self.session
+        ids = s.scalars(select(SourceRow.escalator_id).where(SourceRow.source == "osm")).all()
+        devices = []
+        for escalator_id in ids:
+            row = s.get(EscalatorRow, escalator_id)
+            if row is None:
+                continue
+            # Already reconciled into an STM device: not a standalone candidate.
+            has_stm = s.scalar(
+                select(SourceRow).where(
+                    SourceRow.escalator_id == escalator_id, SourceRow.source == "stm"
+                )
+            )
+            if has_stm is not None:
+                continue
+            osm_source = s.scalar(
+                select(SourceRow).where(
+                    SourceRow.escalator_id == escalator_id, SourceRow.source == "osm"
+                )
+            )
+            raw = (
+                json.loads(osm_source.raw_data_json)
+                if osm_source is not None and osm_source.raw_data_json
+                else {}
+            )
+            devices.append(
+                {
+                    "id": row.id,
+                    "latitude": row.latitude,
+                    "longitude": row.longitude,
+                    "level": raw.get("level"),
+                    "incline": raw.get("incline"),
+                    "conveying": raw.get("conveying"),
+                }
+            )
+        return devices
+
+    def merge_into(self, keep_id, absorbed_id):
+        """Collapse ``absorbed_id`` into ``keep_id``; keep the STM status authority.
+
+        Repoints the absorbed device's source/status/history rows at the kept
+        device, adopts device geometry the kept row lacks, then deletes the
+        absorbed row. OSM carries no live status, so STM levels/direction are
+        never overwritten.
+        """
+        s = self.session
+        keep = s.get(EscalatorRow, keep_id)
+        absorbed = s.get(EscalatorRow, absorbed_id)
+        if keep is None or absorbed is None or keep_id == absorbed_id:
+            return False
+        for row in s.scalars(select(SourceRow).where(SourceRow.escalator_id == absorbed_id)):
+            row.escalator_id = keep_id
+        for row in s.scalars(select(CurrentRow).where(CurrentRow.escalator_id == absorbed_id)):
+            row.escalator_id = keep_id
+        for row in s.scalars(select(HistoryRow).where(HistoryRow.escalator_id == absorbed_id)):
+            row.escalator_id = keep_id
+        if keep.latitude is None and absorbed.latitude is not None:
+            keep.latitude = absorbed.latitude
+            keep.longitude = absorbed.longitude
+        s.delete(absorbed)
+        s.flush()
+        return True
+
     def add_run(self, **fields):
         metadata = fields.pop("metadata", {})
         self.session.add(
